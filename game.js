@@ -1,6 +1,6 @@
 // ============================================
 //  DODGE — Neon Survival
-//  A small arcade game by [Your Name]
+//  A small arcade game by Deep Biswas
 // ============================================
 
 const canvas = document.getElementById('game');
@@ -11,7 +11,6 @@ const startBtn = document.getElementById('startBtn');
 const W = canvas.width;
 const H = canvas.height;
 
-// ---------- Game state ----------
 const STATE = {
   READY: 'ready',
   PLAYING: 'playing',
@@ -20,7 +19,6 @@ const STATE = {
 
 let state = STATE.READY;
 
-// ---------- Player ----------
 const player = {
   x: W / 2,
   y: H - 80,
@@ -32,47 +30,13 @@ const player = {
 
 const keys = { left: false, right: false };
 
-// ---------- Obstacles ----------
 let obstacles = [];
 let spawnTimer = 0;
-let spawnInterval = 45; // frames
+let spawnInterval = 45;
 let difficultyTimer = 0;
 
-// ---------- Score ----------
 let score = 0;
 let highScore = Number(localStorage.getItem('dodge-highscore') || 0);
-
-// ---------- Input ----------
-window.addEventListener('keydown', (e) => {
-  if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
-  if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
-
-  if ((e.key === ' ' || e.key === 'Enter') && state !== STATE.PLAYING) {
-    startGame();
-  }
-});
-
-window.addEventListener('keyup', (e) => {
-  // ---------- Mobile Touch Controls ----------
-canvas.addEventListener('touchstart', handleTouch, { passive: false });
-canvas.addEventListener('touchmove', handleTouch, { passive: false });
-canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
-
-function handleTouch(e) {
-  e.preventDefault(); // Screen scroll hone se rokne ke liye
-  if (state !== STATE.PLAYING) return;
-  
-  if (e.touches.length > 0) {
-    const rect = canvas.getBoundingClientRect();
-    // Jahan touch kiya hai, player ko wahan le jao
-    const touchX = e.touches[0].clientX - rect.left;
-    player.x = touchX; 
-  }
-}
-
-function handleTouchEnd(e) {
-  e.preventDefault();
-}
 
 // ---------- Input (Keyboard) ----------
 window.addEventListener('keydown', (e) => {
@@ -89,12 +53,23 @@ window.addEventListener('keyup', (e) => {
   if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
 });
 
-// Start Button (Click aur Touch dono ke liye)
-startBtn.addEventListener('click', startGame);
-startBtn.addEventListener('touchstart', (e) => {
+// ---------- Input (Mobile Touch) ----------
+canvas.addEventListener('touchstart', handleTouch, { passive: false });
+canvas.addEventListener('touchmove', handleTouch, { passive: false });
+canvas.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
+
+function handleTouch(e) {
   e.preventDefault();
-  startGame();
-}, { passive: false });
+  if (state !== STATE.PLAYING) return;
+  if (e.touches.length > 0) {
+    const rect = canvas.getBoundingClientRect();
+    const touchX = e.touches[0].clientX - rect.left;
+    player.x = touchX;
+  }
+}
+
+// Start Button (Click handles both PC and Mobile)
+startBtn.addEventListener('click', startGame);
 
 // ---------- Helpers ----------
 function random(min, max) {
@@ -103,7 +78,7 @@ function random(min, max) {
 
 function spawnObstacle() {
   const width = random(30, 90);
-  const isHazard = Math.random() < 0.25; // 25% chance of pink (score)
+  const isHazard = Math.random() < 0.25;
   obstacles.push({
     x: random(0, W - width),
     y: -30,
@@ -155,31 +130,26 @@ function showOverlay() {
 function update() {
   if (state !== STATE.PLAYING) return;
 
-  // Player movement
   if (keys.left) player.x -= player.speed;
   if (keys.right) player.x += player.speed;
   player.x = Math.max(player.width / 2, Math.min(W - player.width / 2, player.x));
 
-  // Spawn
   spawnTimer++;
   if (spawnTimer >= spawnInterval) {
     spawnTimer = 0;
     spawnObstacle();
   }
 
-  // Difficulty ramp
   difficultyTimer++;
   if (difficultyTimer >= 300) {
     difficultyTimer = 0;
     spawnInterval = Math.max(18, spawnInterval - 3);
   }
 
-  // Obstacles
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const o = obstacles[i];
     o.y += o.speed;
 
-    // Collision (AABB)
     const px = player.x - player.width / 2;
     const py = player.y - player.height / 2;
     if (
@@ -198,7 +168,6 @@ function update() {
       continue;
     }
 
-    // Out of bounds → score
     if (o.y > H) {
       if (!o.bonus) score++;
       obstacles.splice(i, 1);
@@ -277,14 +246,12 @@ function draw() {
   drawHUD();
 }
 
-// ---------- Game loop ----------
 function loop() {
   update();
   draw();
   requestAnimationFrame(loop);
 }
 
-// Polyfill for older browsers
 if (!CanvasRenderingContext2D.prototype.roundRect) {
   CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
     this.moveTo(x + r, y);
@@ -297,4 +264,5 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
   };
 }
 
+// Start the loop
 loop();
