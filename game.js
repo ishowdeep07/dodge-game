@@ -53,11 +53,48 @@ window.addEventListener('keydown', (e) => {
 });
 
 window.addEventListener('keyup', (e) => {
+  // ---------- Mobile Touch Controls ----------
+canvas.addEventListener('touchstart', handleTouch, { passive: false });
+canvas.addEventListener('touchmove', handleTouch, { passive: false });
+canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+function handleTouch(e) {
+  e.preventDefault(); // Screen scroll hone se rokne ke liye
+  if (state !== STATE.PLAYING) return;
+  
+  if (e.touches.length > 0) {
+    const rect = canvas.getBoundingClientRect();
+    // Jahan touch kiya hai, player ko wahan le jao
+    const touchX = e.touches[0].clientX - rect.left;
+    player.x = touchX; 
+  }
+}
+
+function handleTouchEnd(e) {
+  e.preventDefault();
+}
+
+// ---------- Input (Keyboard) ----------
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
+  if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
+
+  if ((e.key === ' ' || e.key === 'Enter') && state !== STATE.PLAYING) {
+    startGame();
+  }
+});
+
+window.addEventListener('keyup', (e) => {
   if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
   if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
 });
 
+// Start Button (Click aur Touch dono ke liye)
 startBtn.addEventListener('click', startGame);
+startBtn.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  startGame();
+}, { passive: false });
 
 // ---------- Helpers ----------
 function random(min, max) {
